@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bhopal Metro Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        margin: 0;
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(135deg, #f0f4f8, #e2ebf0);
+        color: #2c3e50;
+    }
+
+    .menu-options a {
+        color: white;
+        text-decoration: none;
+        margin-left: 20px;
+        font-weight: bold;
+        transition: color 0.3s;
+    }
+
+    .menu-options a:hover {
+        color: orange;
+    }
+
+    #nav-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 15px;
+        background-color: #2980b9;
+        color: white;
+        flex-wrap: nowrap;
+        box-sizing: border-box;
+        width: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 3000;
+    }
+
+    .nav-top {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-grow: 1;
+        overflow: hidden;
+    }
+
+    .nav-top h2 {
+        font-size: 20px;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .hamburger {
+        width: 30px;
+        height: 25px;
+        cursor: pointer;
+        z-index: 3001;
+        position: relative;
+    }
+
+    .hamburger div {
+        height: 3px;
+        background-color: white !important;
+        margin: 5px 0;
+        border-radius: 2px;
+        transition: 0.3s;
+    }
+
+    .hamburger.open div {
+        background-color: white !important;
+    }
+
+    .menu-options {
+        display: flex;
+        gap: 15px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        margin-top: 0;
+    }
+
+    h1#heading {
+        text-align: center;
+        margin: 80px 0 20px;
+        font-size: 36px;
+        font-weight: 700;
+        color: #2980b9;
+    }
+
+    label, input, button {
+        display: block;
+        margin: 10px auto;
+        max-width: 400px;
+        width: 90%;
+        font-size: 16px;
+    }
+
+    input, button {
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+    }
+
+    input:focus {
+        outline: none;
+        border-color: #2980b9;
+    }
+
+    button {
+        background-color: #f39c12;
+        color: white;
+        font-weight: bold;
+        border: none;
+        transition: background 0.3s;
+    }
+
+    button:hover {
+        background-color: #d35400;
+    }
+
+    #route-info {
+        background: #ffffff;
+        margin: 20px auto;
+        max-width: 90%;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        line-height: 1.6;
+    }
+
+    #map {
+        height: 650px;
+        margin: 20px auto;
+        max-width: 95%;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    footer {
+        text-align: center;
+        background-color: #2980b9;
+        color: white;
+        padding: 15px;
+        margin-top: 30px;
+    }
+
+    #sidebar {
+        position: fixed;
+        top: 0;
+        left: -500px;
+        width: 300px;
+        height: 96%;
+        background: #ecf0f1;
+        overflow-y: auto;
+        transition: left 0.3s;
+        z-index: 2000;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        padding: 20px;
+    }
+
+    #sidebar.open {
+        left: 0;
+    }
+
+    #sidebar h2 {
+        margin-top: -5px;
+        color: #2980b9;
+        font-size: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    th, td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #3498db;
+        color: white;
+    }
+
+    .more-info-content {
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+        color: #0b0a07;
+        padding: 15px;
+        margin: 20px auto;
+        max-width: 90%;
+        border-radius: 10px;
+        font-size: 15px;
+        display: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .change-label {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        padding: 2px 6px;
+        font-size: 13px;
+        color: #333;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+    .blur-background {
+        filter: blur(5px);
+        pointer-events: none;
+        user-select: none;
+    }
+
+    #ticket-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        z-index: 1000;
+        display: none;
+    }
+
+    #modal-overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.4);
+        z-index: 999;
+        display: none;
+    }
+
+    .receipt-btn {
+        margin-top: 15px;
+        background-color: #2980b9;
+        color: white;
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        width: 100%;
+        font-weight: bold;
+        cursor: pointer;
+        font-family: 'Poppins', sans-serif;
+        transition: background-color 0.3s ease;
+    }
+
+    .receipt-btn:hover {
+        background-color: #2471a3;
+    }
+
+    #pay-counter-btn {
+        background-color: #27ae60;
+    }
+
+    #pay-counter-btn:hover {
+        background-color: #1e8449;
+    }
+
+    @media (max-width: 768px) {
+        #map {
+            height: 400px;
+        }
+
+        label, input, button {
+            max-width: 95%;
+            font-size: 14px;
+        }
+
+        h1#heading {
+            font-size: 24px;
+        }
+
+        .menu-options {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .hamburger div {
+            background-color: white !important;
+        }
+
+        .hamburger.open div {
+            background-color: white !important;
+        }
+
+        #sidebar {
+            width: 85%;
+        }
+    }
+
+    body, html {
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+    }
+
+    #main-content, #nav-bar, .menu-options {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+</style>
+</head>
+<body>
+
+
+    <div id="loader" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+background:rgba(255,255,255,0.9); padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.2); z-index:1001;">
+    <strong>Loading route...</strong>
+</div>
+
+<div id="modal-overlay"></div>
+
+<div id="nav-bar">
+  <div class="nav-top">
+    <div class="hamburger" onclick="toggleSidebar()">
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
+  </div>
+  <div class="menu-options">
+    <a href="#" onclick="showMoreInfo()">More Info</a>
+    <a href="#" onclick="clearAll()">Clear</a>
+  </div>
+</div>
+
+
+<!-- More Info Section -->
+<div class="more-info-content" id="moreInfoContent" style="max-width: 800px; margin: auto; padding: 1rem; font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+  <h3 style="margin-top: 10px; text-align: center; color: #004d99;">Virtual Metro Map Overview</h3>
+
+  <img src="generatedbmpmap.png" alt="Virtual Metro Map"
+       style="display: block; width: 100%; border-radius: 10px; border: 1px solid #ccc; margin: 20px auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+
+  <p>
+    This system consists of <strong>53 metro stations</strong> in total. You can view the full list of stations and their codes via the leftmost top 3-line (hamburger) menu.
+  </p>
+
+  <p>
+    The average speed of the metro is considered to be <strong>45 kilometers per hour</strong>.
+  </p>
+
+  <h4 style="color: #007acc; margin-top: 2rem;">Metro Lines & Station Codes</h4>
+  <ul style="list-style: none; padding-left: 0;">
+    <li><strong style="color: orange;">Orange Line:</strong> Stations [0, 1, 2, 3, 4, 5, 42, 6, 7, 8]</li>
+    <li><strong style="color: green;">Green Line:</strong> Stations [9, 10, 11, 43, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 52]</li>
+    <li><strong style="color: red;">Red Line:</strong> Stations [22, 23, 13, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]</li>
+    <li><strong style="color: goldenrod;">Yellow Line:</strong> Stations [36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52]</li>
+  </ul>
+
+  <h4 style="color: #007acc; margin-top: 2rem;">Major Transfer Stations</h4>
+  <p>
+    You can change metro lines at the following major transfer stations:
+  </p>
+    There are <strong>4 major transfer stations</strong> where you can change metro lines:<br><br>
+
+    <strong>Roushanpura 2</strong> — change between <span style="color: orange; font-weight: bold;">Orange</span> and <span style="color: goldenrod; font-weight: bold;">Yellow</span> lines.<br>
+    <strong>New Market</strong> — change between <span style="color: green; font-weight: bold;">Green</span> and <span style="color: goldenrod; font-weight: bold;">Yellow</span> lines.<br>
+    <strong>MP Nagar</strong> — change between <span style="color: red; font-weight: bold;">Red</span> and <span style="color: green; font-weight: bold;">Green</span> lines.<br>
+    <strong>Bairagarh Chichli</strong> — change between <span style="color: green; font-weight: bold;">Green</span> and <span style="color: goldenrod; font-weight: bold;">Yellow</span> lines.<br><br>
+
+    (Station codes: 42, 43, 13, 52 respectively)
+
+    
+<p>
+    <strong>Fare Information:</strong><br>
+    The fare calculation is based on the total distance traveled:<br><br>
+    - Up to 2 kilometers: ₹5 flat fare.<br>
+    - For every additional kilometer beyond 2 km: ₹2 per km.<br><br>
+    This fare structure ensures an affordable and straightforward pricing system for all passengers.
+</p>
+
+  <p style="margin-top: 2rem;">
+    Simply enter your <strong>source</strong> and <strong>destination</strong> stations can take help of the leftmost top ☰ menu (hamburger icon) in the navigation bar !
+  </p>
+</div>
+
+
+
+    <h1 id="heading"> Metro Mera Sathi </h1>
+    <!--<label for="source">Source Station: </label>
+    <input type="text" id="source" placeholder="Enter Source Station"> -->
+    <label for="source">Source Station:</label>
+    <input list="stations" id="source" name="source" placeholder="Enter source station" autocomplete="off">
+
+    <label for="destination">Destination Station:</label>
+    <input list="stations" id="destination" name="destination" placeholder="Enter destination station" autocomplete="off">
+    
+
+   <!-- <label for="destination">Destination Station: </label>
+    <input type="text" id="destination" placeholder="Enter Destination Station"> -->
+    <button onclick="plotRoute()">Plot Route</button>
+
+    <div id="route-info"></div>
+
+    <button id="buy-ticket-btn" style="display:none;" onclick="buyTicket()">Buy Ticket</button>
+
+    <div id="ticket-modal" style="
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 400px;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 2000;
+    font-family: 'Poppins', sans-serif;
+    text-align: left;
+">
+
+
+    <h3 style="color: #2980b9;">🎫 Metro Ticket Receipt</h3>
+    <div id="ticket-details" style="margin-top: 10px; font-size: 14px;"></div>
+
+    <button onclick="payAtCounter()" id="pay-counter-btn" class="receipt-btn">Pay at Counter</button>
+
+
+    <button onclick="closeTicket()"  class="receipt-btn" style="
+        margin-top: 15px;
+        background-color: #2980b9;
+        color: white;
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        width: 100%;
+        font-weight: bold;
+        cursor: pointer;
+    ">Close</button>
+</div>
+
+
+
+    <div id="map"></div>
+
+    <div id="sidebar">
+
+    <h2>List of Bhopal Metro Stations</h2>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Station Code</th>
+                    <th>Station Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>0</td><td>Gandhi Nagar</td></tr>
+                <tr><td>1</td><td>Karond</td></tr>
+                <tr><td>2</td><td>Berasia</td></tr>
+                <tr><td>3</td><td>Budhwara</td></tr>
+                <tr><td>4</td><td>Jahangirabad</td></tr>
+                <tr><td>5</td><td>Roushanpura1</td></tr>
+                <tr><td>6</td><td>Kotra Sultanabad</td></tr>
+                <tr><td>7</td><td>Nehru Nagar</td></tr>
+                <tr><td>8</td><td>Syamla Hills</td></tr>
+                <tr><td>9</td><td>Van Vihar</td></tr>
+                <tr><td>10</td><td>Jawahar Chowk</td></tr>
+                <tr><td>11</td><td>Rangmahal</td></tr>
+                <tr><td>12</td><td>Vidhan Sabha</td></tr>
+                <tr><td>13</td><td>MP Nagar</td></tr>
+                <tr><td>14</td><td>6 no Stop</td></tr>
+                <tr><td>15</td><td>Shivaji Nagar</td></tr>
+                <tr><td>16</td><td>Char Imli</td></tr>
+                <tr><td>17</td><td>Bittan Market</td></tr>
+                <tr><td>18</td><td>Shahpura</td></tr>
+                <tr><td>19</td><td>Gulmohar</td></tr>
+                <tr><td>20</td><td>Akriti Eco City</td></tr>
+                <tr><td>21</td><td>Saliya</td></tr>
+                <tr><td>22</td><td>Chandbad</td></tr>
+                <tr><td>23</td><td>Ashoka Garden</td></tr>
+                <tr><td>24</td><td>Govindpura</td></tr>
+                <tr><td>25</td><td>Minal</td></tr>
+                <tr><td>26</td><td>Piplani</td></tr>
+                <tr><td>27</td><td>Ayodhya Bypass</td></tr>
+                <tr><td>28</td><td>Anand Nagar</td></tr>
+                <tr><td>29</td><td>Awadhpuri</td></tr>
+                <tr><td>30</td><td>Barkheda Pathani</td></tr>
+                <tr><td>31</td><td>Saket Nagar</td></tr>
+                <tr><td>32</td><td>AIIMS</td></tr>
+                <tr><td>33</td><td>Barkatullah University</td></tr>
+                <tr><td>34</td><td>Misrod</td></tr>
+                <tr><td>35</td><td>Ratanpur</td></tr>
+                <tr><td>36</td><td>Bairagarh</td></tr>
+                <tr><td>37</td><td>Lalghati</td></tr>
+                <tr><td>38</td><td>Tazul Masjid</td></tr>
+                <tr><td>39</td><td>Hamidia Hospital</td></tr>
+                <tr><td>40</td><td>Kamla Park</td></tr>
+                <tr><td>41</td><td>Polytechnic Square</td></tr>
+                <tr><td>42</td><td>Roushanpura2</td></tr>
+                <tr><td>43</td><td>New Market</td></tr>
+                <tr><td>44</td><td>Mata Mandir</td></tr>
+                <tr><td>45</td><td>MANIT Square</td></tr>
+                <tr><td>46</td><td>Patrakar Colony</td></tr>
+                <tr><td>47</td><td>Chuna Bhatti</td></tr>
+                <tr><td>48</td><td>Sarvdharm</td></tr>
+                <tr><td>49</td><td>Bima Kunj</td></tr>
+                <tr><td>50</td><td>Danish Kunj</td></tr>
+                <tr><td>51</td><td>Nayapura</td></tr>
+                <tr><td>52</td><td>Bairagarh Chichli</td></tr>
+            </tbody>
+        </table>
+    </div>
+  
+
+   </div>
+
+
+    
+        <datalist id="stations">
+            <!-- Station List will be dynamically populated -->
+            <option value="Gandhi Nagar">
+            <option value="Karond">
+            <option value="Berasia">
+            <option value="Budhwara">
+            <option value="Jahangirabad">
+            <option value="Roushanpura1">
+            <option value="Kotra Sultanabad">
+            <option value="Nehru Nagar">
+            <option value="Syamla Hills">
+            <option value="Van Vihar">
+            <option value="Jawahar Chowk">
+            <option value="Rangmahal">
+            <option value="Vidhan Sabha">
+            <option value="MP Nagar">
+            <option value="6 no Stop">
+            <option value="Shivaji Nagar">
+            <option value="Char Imli">
+            <option value="Bittan Market">
+            <option value="Shahpura">
+            <option value="Gulmohar">
+            <option value="Akriti Eco City">
+            <option value="Saliya">
+            <option value="Chandbad">
+            <option value="Ashoka Garden">
+            <option value="Govindpura">
+            <option value="Minal">
+            <option value="Piplani">
+            <option value="Ayodhya Bypass">
+            <option value="Anand Nagar">
+            <option value="Awadhpuri">
+            <option value="Barkheda Pathani">
+            <option value="Saket Nagar">
+            <option value="AIIMS">
+            <option value="Barkatullah University">
+            <option value="Misrod">
+            <option value="Ratanpur">
+            <option value="Bairagarh">
+            <option value="Lalghati">
+            <option value="Tazul Masjid">
+            <option value="Hamidia Hospital">
+            <option value="Kamla Park">
+            <option value="Polytechnic Square">
+            <option value="Roushanpura2">
+            <option value="New Market">
+            <option value="Mata Mandir">
+            <option value="MANIT Square">
+            <option value="Patrakar Colony">
+            <option value="Chuna Bhatti">
+            <option value="Sarvdharm">
+            <option value="Bima Kunj">
+            <option value="Danish Kunj">
+            <option value="Nayapura">
+            <option value="Bairagarh Chichli">
+        </datalist>
+    
+
+
+    <footer>
+        <p>© 2025 Bhopal metro . All rights reserved.</p>
+    </footer>
+
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+       // Updated station list with variable name 'stationsList'
+       let initialLines = [];
+       let defaultMarkers = [];
+
+       const stationsList = [
+            "Gandhi Nagar", "Karond", "Berasia", "Budhwara", "Jahangirabad", "Roushanpura1", "Kotra Sultanabad", 
+            "Nehru Nagar", "Syamla Hills", "Van Vihar", "Jawahar Chowk", "Rangmahal", "Vidhan Sabha", 
+            "MP Nagar", "6 no Stop", "Shivaji Nagar", "Char Imli", "Bittan Market", "Shahpura", "Gulmohar", 
+            "Akriti Eco City", "Saliya", "Chandbad", "Ashoka Garden", "Govindpura", "Minal", "Piplani", 
+            "Ayodhya Bypass", "Anand Nagar", "Awadhpuri", "Barkheda Pathani", "Saket Nagar", "AIIMS", 
+            "Barkatullah University", "Misrod", "Ratanpur", "Bairagarh", "Lalghati", "Tazul Masjid", 
+            "Hamidia Hospital", "Kamla Park", "Polytechnic Square", "Roushanpura2", "New Market", "Mata Mandir", 
+            "MANIT Square", "Patrakar Colony", "Chuna Bhatti", "Sarvdharm", "Bima Kunj", "Danish Kunj", 
+            "Nayapura", "Bairagarh Chichli"
+        ];
+
+
+        // Dynamically populate the datalist with station names from stationsList
+        const datalist = document.getElementById("stations");
+        stationsList.forEach(station => {
+            const option = document.createElement("option");
+            option.value = station;
+            datalist.appendChild(option);
+        });
+
+ function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const hamburger = document.querySelector('.hamburger');
+
+  sidebar.classList.toggle('open');
+  hamburger.classList.toggle('open');
+}
+
+document.addEventListener('click', function(event) {
+  const sidebar = document.getElementById('sidebar');
+  const hamburger = document.querySelector('.hamburger');
+  const target = event.target;
+
+  // If sidebar is open and click is outside sidebar and hamburger
+  if (sidebar.classList.contains('open') &&
+      !sidebar.contains(target) &&
+      !hamburger.contains(target)) {
+    sidebar.classList.remove('open');
+    hamburger.classList.remove('open');
+  }
+});
+
+         
+        
+ // Function to toggle the visibility of the 'More Info' section
+ function showMoreInfo() {
+            const moreInfoContent = document.getElementById('moreInfoContent');
+            if (moreInfoContent.style.display === 'none' || moreInfoContent.style.display === '') {
+                moreInfoContent.style.display = 'block';
+            } else {
+                moreInfoContent.style.display = 'none';
+            }
+        }
+        const map = L.map('map').setView([23.2599, 77.4126], 12);  // Higher latitude to move the map upwards
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        const stations = [
+            { code: 0, name: "Gandhi Nagar", coords: [23.2854, 77.3989] },
+            { code: 1 , name: "Karond", coords: [23.2930, 77.4098] },
+            { code: 2 , name: "Berasia", coords: [23.3200, 77.4200] },
+            { code: 3 , name: "Budhwara", coords: [23.2585, 77.4072] },
+            { code: 4 , name: "Jahangirabad", coords: [23.2636, 77.4234] },
+            { code: 5, name: "Roushanpura1", coords: [23.2506, 77.4015] },
+            { code: 6 ,name: "Kotra Sultanabad", coords: [23.2350, 77.3960] },
+            { code: 7,name: "Nehru Nagar", coords: [23.2272, 77.4010] },
+            { code: 8,name: "Syamla Hills", coords: [23.2317, 77.3862] },
+            { code: 9,name: "Van Vihar", coords: [23.2126, 77.3804] },
+            { code: 10,name: "Jawahar Chowk", coords: [23.2435, 77.4231] },
+            { code: 11,name: "Rangmahal", coords: [23.2510, 77.4175] },
+            { code: 12,name: "Vidhan Sabha", coords: [23.2475, 77.4138] },
+            { code: 13,name: "MP Nagar", coords: [23.2358, 77.4352] },
+            { code: 14,name: "6 no Stop", coords: [23.2270, 77.4380] },
+            { code: 15, name: "Shivaji Nagar", coords: [23.2268, 77.4301] },
+            { code: 16,name: "Char Imli", coords: [23.2234, 77.4215] },
+            { code: 17,name: "Bittan Market", coords: [23.2152, 77.4305] },
+            { code: 18,name: "Shahpura", coords: [23.2068, 77.4290] },
+            { code: 19,name: "Gulmohar", coords: [23.2026, 77.4375] },
+            { code: 20,name: "Akriti Eco City", coords: [23.1932, 77.4390] },
+            { code: 21,name: "Saliya", coords: [23.1888, 77.4402] },
+            { code: 22,name: "Chandbad", coords: [23.2956, 77.4089] },
+            { code: 23,name: "Ashoka Garden", coords: [23.2745, 77.4185] },
+            { code:24,name: "Govindpura", coords: [23.2756, 77.4325] },
+            { code:25,name: "Minal", coords: [23.2765, 77.4500] },
+            { code:26,name: "Piplani", coords: [23.2710, 77.4650] },
+            { code:27,name: "Ayodhya Bypass", coords: [23.2672, 77.4723] },
+            { code:28,name: "Anand Nagar", coords: [23.2635, 77.4815] },
+            { code:29,name: "Awadhpuri", coords: [23.2552, 77.4915] },
+            { code:30,name: "Barkheda Pathani", coords: [23.2478, 77.4960] },
+            { code:31,name: "Saket Nagar", coords: [23.2276, 77.4523] },
+            { code:32,name: "AIIMS", coords: [23.2189, 77.4498] },
+            { code:33,name: "Barkatullah University", coords: [23.2101, 77.4599] },
+            { code:34,name: "Misrod", coords: [23.1996, 77.4630] },
+            { code:35,name: "Ratanpur", coords: [23.2906, 77.4155] },
+            { code:36,name: "Bairagarh", coords: [23.2667, 77.3668] },
+            { code:37,name: "Lalghati", coords: [23.2708, 77.3988] },
+            { code:38,name: "Tazul Masjid", coords: [23.2728, 77.4115] },
+            { code:39,name: "Hamidia Hospital", coords: [23.2724, 77.4200] },
+            { code:40,name: "Kamla Park", coords: [23.2636, 77.4238] },
+            { code:41,name: "Polytechnic Square", coords: [23.2500, 77.4200] },
+            { code:42,name: "Roushanpura2", coords: [23.2542, 77.4125] },
+            { code:43,name: "New Market", coords: [23.2448, 77.4130] },
+            { code:44,name: "Mata Mandir", coords: [23.2401, 77.4180] },
+            { code:45,name: "MANIT Square", coords: [23.2334, 77.4156] },
+            { code:46,name: "Patrakar Colony", coords: [23.2200, 77.4215] },
+            { code:47,name: "Chuna Bhatti", coords: [23.2105, 77.4290] },
+            { code:48,name: "Sarvdharm", coords: [23.1958, 77.4385] },
+            { code:49,name: "Bima Kunj", coords: [23.1856, 77.4405] },
+            { code:50,name: "Danish Kunj", coords: [23.1789, 77.4468] },
+            { code:51,name: "Nayapura", coords: [23.1708, 77.4485] },
+            { code:52,name: "Bairagarh Chichli", coords: [23.1665, 77.4515] }
+        ];
+        
+         // Define the lines with colors and station codes
+        const lines = [
+            {
+                color: 'orange',
+                stations: [0, 1, 2, 3, 4,5, 42, 6, 7, 8],
+            },
+            {
+                color: 'green',
+                stations: [9, 10, 11, 43, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 52],
+            },
+            {
+                color: 'red',
+                stations: [22, 23, 13, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35],
+            },
+            {
+                color: 'yellow',
+                stations: [36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52],
+            },
+        ];
+
+        // Map stations by code for quick lookup
+        const stationByCode = stations.reduce((map, station) => {
+            map[station.code] = station.coords;
+            return map;
+        }, {});
+
+        // Draw polylines for each line
+        lines.forEach(line => {
+            const lineCoords = line.stations.map(code => stationByCode[code]).filter(Boolean);
+           // White separator line (background)
+      const whiteLine = L.polyline(lineCoords, { color: 'white', weight: 9 }).addTo(map);
+      const coloredLine = L.polyline(lineCoords, { color: line.color, weight: 7}).addTo(map);
+       initialLines.push(whiteLine, coloredLine);
+
+
+        });
+
+        let sourceMarker = null;
+        let destinationMarker = null;
+        let routeLine = null;
+
+        stations.forEach(station => {
+            const marker = L.marker(station.coords).addTo(map).bindPopup('<b>' + station.name + '</b>');
+          defaultMarkers.push(marker);
+
+        });
+
+        const adjacencyList = {
+    0: [1],
+    1: [0, 2],
+    2: [1, 3],
+    3: [2, 4],
+    4: [3, 5],
+    5: [4, 42],
+    6: [42, 7],
+    7: [6, 8],
+    8: [7], 
+    9: [10],
+    10: [9, 11],
+    11: [10, 43],
+    12: [43, 13],
+    13: [12, 14, 23, 24],
+    14: [13, 15],
+    15: [14, 16],
+    16: [15, 17],
+    17: [16, 18],
+    18: [17, 19],
+    19: [18, 20],
+    20: [19, 21],
+    21: [20, 52],
+    22: [23],
+    23: [22, 13],
+    24: [13, 25],
+    25: [24, 26],
+    26: [25, 27],
+    27: [26, 28],
+    28: [27, 29],
+    29: [28, 30],
+    30: [29, 31],
+    31: [30, 32],
+    32: [31, 33],
+    33: [32, 34],
+    34: [33, 35],
+    35: [34],
+    36: [37],
+    37: [36, 38],
+    38: [37, 39],
+    39: [38, 40],
+    40: [39, 41],
+    41: [40, 42],
+    42: [41, 5, 6, 43],
+    43: [42, 11, 12, 44],
+    44: [43, 45],
+    45: [44, 46],
+    46: [45, 47],
+    47: [46, 48],
+    48: [47, 49],
+    49: [48, 50],
+    50: [49, 51],
+    51: [50, 52],
+    52: [51, 21]
+};
+
+      
+      
+        function dijkstra(source, destination) {
+            const distances = {};
+            const previous = {};
+            const queue = new Set(Object.keys(adjacencyList));
+
+            Object.keys(adjacencyList).forEach(node => {
+                distances[node] = Infinity;
+                previous[node] = null;
+            });
+            distances[source] = 0;
+
+            while (queue.size > 0) {
+                let currentNode = Array.from(queue).reduce((minNode, node) =>
+                    distances[node] < distances[minNode] ? node : minNode
+                );
+
+                queue.delete(currentNode);
+
+                if (currentNode === destination) break;
+
+                adjacencyList[currentNode].forEach(neighbor => {
+                    const newDist = distances[currentNode] + 1;
+                    if (newDist < distances[neighbor]) {
+                        distances[neighbor] = newDist;
+                        previous[neighbor] = currentNode;
+                    }
+                });
+            }
+
+            const path = [];
+            let current = destination;
+            while (current !== null) {
+                path.unshift(current);
+                current = previous[current];
+            }
+
+            return { distance: distances[destination], path };
+        }
+        
+
+        let markers = []; // To track markers on the map
+
+// Haversine formula to calculate distance between two geographical points
+function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of the Earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+}
+
+function calculateFare(distance) {
+    if (distance <= 2) {
+        return 5;
+    } else {
+        return 5 + Math.ceil((distance - 2)) * 2;
+    }
+}
+
+function hideDefaultMarkers() {
+    defaultMarkers.forEach(marker => map.removeLayer(marker));
+}
+
+function showDefaultMarkers() {
+    defaultMarkers.forEach(marker => marker.addTo(map));
+}
+
+// Map each station code to the set of lines (colors) it belongs to
+const stationLinesMap = {};
+lines.forEach(line => {
+  line.stations.forEach(stationCode => {
+    if (!stationLinesMap[stationCode]) stationLinesMap[stationCode] = new Set();
+    stationLinesMap[stationCode].add(line.color);
+  });
+});
+
+function colorizeLine(lineColor) {
+  const colors = {
+    red: 'red',
+    green: 'green',
+    yellow: 'goldenrod',
+    orange: 'orange'
+  };
+  const color = colors[lineColor.toLowerCase()] || 'black';
+  return `<span style="color: ${color}; font-weight: bold;">${capitalize(lineColor)}</span>`;
+}
+
+
+function getLineChangeInfo(path) {
+  if (path.length < 2) return [];
+
+  let changeInfos = [];
+
+  // Determine the initial line(s) between first two stations
+  let prevLines = getCommonLines(path[0], path[1]);
+
+  for (let i = 1; i < path.length - 1; i++) {
+    let currentLines = getCommonLines(path[i], path[i + 1]);
+
+    // If there's no intersection with previous lines, it means line change
+    const intersection = [...prevLines].filter(line => currentLines.has(line));
+
+    if (intersection.length === 0) {
+      // Line change at station path[i]
+      // Assume transfer from any line in prevLines to any line in currentLines (pick first)
+      const fromLine = [...prevLines][0];
+      const toLine = [...currentLines][0];
+      const stationName = stations[path[i]].name;
+
+     changeInfos.push(`Change from ${colorizeLine(fromLine)} line to ${colorizeLine(toLine)} line at <strong>${stationName}</strong> station.`);
+
+      
+      prevLines = currentLines;
+    } else {
+      // Continue on the same line
+      prevLines = new Set(intersection);
+    }
+  }
+  return changeInfos;
+}
+
+
+function getCommonLines(stationCode1, stationCode2) {
+  const lines1 = stationLinesMap[stationCode1] || new Set();
+  const lines2 = stationLinesMap[stationCode2] || new Set();
+
+  // Return intersection of two sets
+  return new Set([...lines1].filter(line => lines2.has(line)));
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+
+function plotRoute() {
+
+          hideDefaultMarkers();
+
+    document.getElementById('loader').style.display = 'block';
+
+    setTimeout(() => {
+        document.getElementById('loader').style.display = 'none';
+    }, 100);
+
+    // ...rest of your plotRoute logic (no changes needed)
+
+
+     document.getElementById('loader').style.display = 'block';
+
+    setTimeout(() => {
+        // ... all existing logic here ...
+
+        document.getElementById('loader').style.display = 'none';
+    }, 100); // slight delay ensures DOM updates
+
+    const sourceName = document.getElementById('source').value.trim();
+    const destinationName = document.getElementById('destination').value.trim();
+
+    const sourceIndex = stations.findIndex(station => station.name.toLowerCase() === sourceName.toLowerCase());
+    const destinationIndex = stations.findIndex(station => station.name.toLowerCase() === destinationName.toLowerCase());
+
+    if (sourceIndex !== -1 && destinationIndex !== -1) {
+        // Remove the previous route and markers
+        if (routeLine) map.removeLayer(routeLine);
+        if (sourceMarker) map.removeLayer(sourceMarker);
+        if (destinationMarker) map.removeLayer(destinationMarker);
+
+        // Remove all previous markers for non-route stations (including their popups)
+        markers.forEach(marker => {
+            marker.remove();  // This removes both the marker and its popup from the map
+        });
+        markers = []; // Reset markers array to ensure no lingering references
+
+        const { distance, path } = dijkstra(sourceIndex.toString(), destinationIndex.toString());
+
+        if (distance === Infinity) {
+            alert("No route found.");
+            return;
+        }
+
+       const pathCoords = path.map(index => stations[index].coords);
+
+// Underlying colored segments based on metro lines
+for (let i = 0; i < path.length - 1; i++) {
+    const from = path[i];
+    const to = path[i + 1];
+    
+    const fromCoord = stations[from].coords;
+    const toCoord = stations[to].coords;
+    const segment = [fromCoord, toCoord];
+
+    // Find the color of the line this segment belongs to
+    let lineColor = null;
+    for (let line of lines) {
+        const codes = line.stations;
+        for (let j = 0; j < codes.length - 1; j++) {
+            if ((codes[j] === from && codes[j+1] === to) || (codes[j] === to && codes[j+1] === from)) {
+                lineColor = line.color;
+                break;
+            }
+        }
+        if (lineColor) break;
+    }
+
+    if (lineColor) {
+        L.polyline(segment, {
+            color: lineColor,
+            weight: 3,
+            opacity: 0.8
+        }).addTo(map);
+    }
+}
+
+// Then draw the dashed blue route on top
+routeLine = L.polyline(pathCoords, { 
+   color: 'blue',  // Light Blue
+    weight: 6,
+    dashArray: '6,6',
+    opacity: 0.7
+}).addTo(map);
+
+        const lineChangeMessages = getLineChangeInfo(path);
+
+sourceMarker = L.marker(pathCoords[0]).addTo(map)
+    .bindPopup('<b style="color: green;">Source: ' + stations[path[0]].name + '</b>')
+    .openPopup();  // ✅ open the source popup
+
+destinationMarker = L.marker(pathCoords[pathCoords.length - 1]).addTo(map)
+    .bindPopup('<b style="color: red;">Destination: ' + stations[path[path.length - 1]].name + '</b>')
+    .openPopup();
+
+        // Fit the map to show the route
+        map.fitBounds(routeLine.getBounds());
+
+        // Calculate the total distance and time
+        let totalDistance = 0; // in kilometers
+        for (let i = 0; i < pathCoords.length - 1; i++) {
+            const [lat1, lon1] = pathCoords[i];
+            const [lat2, lon2] = pathCoords[i + 1];
+            totalDistance += haversine(lat1, lon1, lat2, lon2);
+        }
+
+        const averageSpeed = 45; // km/h
+        const timeInHours = totalDistance / averageSpeed; // Time in hours
+        const timeInMinutes = timeInHours * 60; // Time in minutes
+
+
+              const fare = calculateFare(totalDistance);
+const routeInfo = `
+    <strong>Minimum Number of Stations to be Covered:</strong> ${distance} <br>
+    <strong>Path:</strong> ${path.map(index => stations[index].name).join(' -> ')} <br>
+    <strong>Total Distance:</strong> ${totalDistance.toFixed(2)} km <br>
+    <strong>Estimated Travel Time:</strong> ${timeInMinutes.toFixed(2)} minutes <br>
+    <strong>Estimated Fare:</strong> ₹${fare} <br><br>
+    <strong>Line Changes:</strong><br>
+    ${lineChangeMessages.length > 0 ? lineChangeMessages.join('<br>') : 'No line changes on this route.'}
+`;
+
+
+// Show route info on the page
+document.getElementById('route-info').innerHTML = routeInfo;
+
+document.getElementById('buy-ticket-btn').style.display = 'block';
+
+        // Only add markers for the stations in the route
+    path.forEach(stationCode => {
+    const station = stations[stationCode];
+
+    // Add marker with station popup
+    const marker = L.marker(station.coords).addTo(map)
+        .bindPopup('<b>' + station.name + '</b>');
+    markers.push(marker); // so it can be cleared later
+
+    // Add tooltip if it's a line-change station
+    const lineChangeInfo = {
+        13: "Red ↔ Green",
+        43: "Green ↔ Yellow",
+        42: "Orange ↔ Yellow",
+        52: "Green ↔ Yellow"
+    };
+
+    if (lineChangeInfo[stationCode]) {
+        const tooltip = L.tooltip({
+            permanent: true,
+            direction: 'top',
+            className: 'change-label',
+            offset: [0, -10]
+        })
+        .setContent(`<b>Change: ${lineChangeInfo[stationCode]}</b>`)
+        .setLatLng(station.coords)
+        .addTo(map);
+
+        // When user clicks the marker (i.e. opens popup), remove the tooltip
+        marker.on('popupopen', () => {
+            map.removeLayer(tooltip);
+        });
+    }
+});
+
+    } else {
+        alert("Please enter valid source and destination stations.");
+    }
+}
+
+function buyTicket() {
+    const routeHTML = document.getElementById('route-info').innerHTML;
+
+    // Extract plain text values from HTML
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = routeHTML;
+
+    const textContent = tempDiv.textContent || tempDiv.innerText || "";
+
+    const ticketId = 'MMS' + Math.floor(100000 + Math.random() * 900000); // e.g., MMS123456
+
+    const now = new Date();
+    const timestamp = now.toLocaleDateString() + " " + now.toLocaleTimeString();
+
+    const fullTicket = `
+        <strong>Ticket ID:</strong> ${ticketId} <br>
+        <strong>Issued On:</strong> ${timestamp} <br><br>
+        ${routeHTML}
+    `;
+
+    document.getElementById('ticket-details').innerHTML = fullTicket;
+   
+    document.getElementById('ticket-modal').style.display = 'block';
+    document.getElementById('modal-overlay').style.display = 'block';
+    document.getElementById('main-content').classList.add('blur-background');
+
+    document.getElementById('pay-counter-btn').style.display = 'inline-block';
+}
+
+function payAtCounter() {
+    const ticketText = document.getElementById("ticket-details").innerText;
+
+    // Extract Ticket ID
+    const ticketIdLine = ticketText.split('\n').find(line => line.includes("Ticket ID:"));
+    const ticketId = ticketIdLine ? ticketIdLine.split(":")[1].trim() : "UNKNOWN";
+
+    // Extract Source Station name
+    const sourceInput = document.getElementById("source").value.trim();
+    const sourceStation = sourceInput !== "" ? sourceInput : "the source station";
+
+    alert(`Please go and pay at the ${sourceStation} metro station with Ticket ID: ${ticketId}.\nYou will receive your ticket at the counter after payment.`);
+}
+
+
+
+function closeTicket() {
+  document.getElementById('ticket-modal').style.display = 'none';
+   document.getElementById('modal-overlay').style.display = 'none';
+   document.getElementById('main-content').classList.remove('blur-background');
+
+}
+
+
+function clearAll() {
+    // Clear inputs
+    showDefaultMarkers();
+    
+    document.getElementById('source').value = '';
+    document.getElementById('destination').value = '';
+
+    // Hide route info and ticket button
+    document.getElementById('route-info').innerHTML = '';
+    document.getElementById('buy-ticket-btn').style.display = 'none';
+
+    // Hide modal if open
+    document.getElementById('ticket-modal').style.display = 'none';
+
+    // Remove route line and markers
+    if (routeLine) {
+        map.removeLayer(routeLine);
+        routeLine = null;
+    }
+    if (sourceMarker) {
+        map.removeLayer(sourceMarker);
+        sourceMarker = null;
+    }
+    if (destinationMarker) {
+        map.removeLayer(destinationMarker);
+        destinationMarker = null;
+    }
+    markers.forEach(marker => map.removeLayer(marker));
+    markers = [];
+
+    // Reset map view to default
+    map.setView([23.2599, 77.4126], 12);
+}
+
+
+
+
+      
+</script>
+</body>
+</html>
